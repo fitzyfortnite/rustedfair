@@ -47,6 +47,29 @@ namespace RustedFair.EditorTools
             KeyArtRenderer.Begin();
         }
 
+        [MenuItem("Rusted Fair/Capture Remove Ads Screen (Play mode)", priority = 55)]
+        public static void CaptureRemoveAds()
+        {
+            if (!EditorApplication.isPlaying) { EditorUtility.DisplayDialog("Rusted Fair", "Press Play and run this menu again.", "OK"); return; }
+            StoreReviewShot.Begin();
+        }
+
+        [MenuItem("Rusted Fair/Debug/Toggle Letter Spacing (Play mode)", priority = 90)]
+        public static void ToggleLetterSpacing()
+        {
+            int n = 0;
+            foreach (var ls in Object.FindObjectsByType<LetterSpacing>(FindObjectsInactive.Include, FindObjectsSortMode.None)) { ls.enabled = !ls.enabled; n++; }
+            Debug.Log("[RF] Letter spacing toggled on " + n + " texts");
+        }
+
+        [MenuItem("Rusted Fair/Debug/Toggle Text Shadows (Play mode)", priority = 91)]
+        public static void ToggleShadows()
+        {
+            int n = 0;
+            foreach (var sh in Object.FindObjectsByType<UnityEngine.UI.Shadow>(FindObjectsInactive.Include, FindObjectsSortMode.None)) { sh.enabled = !sh.enabled; n++; }
+            Debug.Log("[RF] Shadows toggled on " + n + " graphics");
+        }
+
         [MenuItem("Rusted Fair/Capture Store Screenshots", true)]
         static bool CaptureValidate() => !StoreScreenshots.Running;
     }

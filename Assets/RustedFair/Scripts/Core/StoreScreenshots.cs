@@ -181,8 +181,11 @@ namespace RustedFair
                     ui.worldCamera = cam;
                     ui.planeDistance = cam.nearClipPlane + 0.1f;
                 }
+                // canvas scaler + layout pick up the new size; the bigger font sizes rebuild the dynamic font atlas, which
+                // leaves garbled glyphs ("TASXS") for a few frames: wait them out
+                for (int f = 0; f < 8; f++) yield return null;
+                Canvas.ForceUpdateCanvases();
                 yield return null;
-                yield return null; // canvas scaler + layout pick up the new size
                 yield return new WaitForEndOfFrame();
                 var tex = new Texture2D(size.x, size.y, TextureFormat.RGB24, false);
                 var prev = RenderTexture.active;

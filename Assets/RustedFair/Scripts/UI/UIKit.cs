@@ -16,7 +16,7 @@ namespace RustedFair
         public static readonly Color Panel = new Color(0.06f, 0.05f, 0.05f, 0.94f);
         public static readonly Color Rust = new Color(0.62f, 0.33f, 0.16f);
         /// <summary>Alpha of the full-screen scrim behind every panel (no card/box backgrounds since v1.1).</summary>
-        public const float ScrimAlpha = 0.86f;
+        public const float ScrimAlpha = 0.95f; // v1.0.3: 0.86 let the menu behind a panel show through its text
 
         public static Canvas MakeCanvas(string name, int order, Transform parent = null)
         {

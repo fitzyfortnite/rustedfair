@@ -17,6 +17,12 @@ namespace RustedFair
             var root = UIKit.Rect(parent, "Panel_" + titleKey);
             UIKit.Stretch(root);
             UIKit.Blocker(root, UIKit.ScrimAlpha);
+            // v1.0.3: in linear colour space a 95 % scrim still leaves the menu text ~25 % visible behind the panel's own
+            // text: hide the other UI under the same parent (menu column, HUD widgets) while the panel is open
+            var hidden = new System.Collections.Generic.List<GameObject>();
+            foreach (Transform ch in parent)
+                if (ch != root && ch.gameObject.activeSelf && ch.name != "Shade" && !ch.name.StartsWith("Panel_")) { ch.gameObject.SetActive(false); hidden.Add(ch.gameObject); }
+            root.gameObject.AddComponent<OnDestroyHook>().onDestroy = () => { foreach (var g in hidden) if (g != null) g.SetActive(true); };
             var box = UIKit.PanelBox(root, "Box", size);
             var title = UIKit.Txt(box.transform, "Title", titleKey, 64, UIKit.BloodBright, TextAnchor.MiddleCenter, FontRole.Title);
             LetterSpacing.Add(title, 0.1f);

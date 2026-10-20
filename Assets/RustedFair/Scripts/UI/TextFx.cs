@@ -27,7 +27,7 @@ namespace RustedFair
 
         public override void ModifyMesh(VertexHelper vh)
         {
-            if (!IsActive() || vh.currentVertCount < 8 || Mathf.Approximately(em, 0f)) return;
+            if (!IsActive() || vh.currentVertCount < 4 || Mathf.Approximately(em, 0f)) return;
             if (text == null) text = GetComponent<Text>();
             if (text == null) return;
             float size = text.fontSize;
@@ -35,28 +35,38 @@ namespace RustedFair
                 size = text.cachedTextGenerator.fontSizeUsedForBestFit / Mathf.Max(0.0001f, text.pixelsPerUnit);
             float spacing = em * size;
 
+            // v1.0.3: work on the triangle stream (6 vertices per glyph). A Shadow / Outline that ran before this effect
+            // rebuilds the mesh with AddUIVertexTriangleStream, so the 4-vertices-per-quad layout assumed before tore the
+            // glyphs apart (the broken first letters of "REMOVE ADS", "SUBSCRIBE", "BUY").
             verts.Clear();
-            var v = new UIVertex();
-            for (int i = 0; i < vh.currentVertCount; i++) { vh.PopulateUIVertex(ref v, i); verts.Add(v); }
-            int quads = verts.Count / 4;
+            vh.GetUIVertexStream(verts);
+            int glyphs = verts.Count / 6;
+            if (glyphs < 2) return;
             int runStart = 0;
             float runY = 0f, prevX = 0f;
-            for (int q = 0; q <= quads; q++)
+            for (int q = 0; q <= glyphs; q++)
             {
-                bool split = q == quads;
+                bool split = q == glyphs;
                 float cx = 0f, minY = 0f;
                 if (!split)
                 {
-                    cx = (verts[q * 4].position.x + verts[q * 4 + 2].position.x) * 0.5f;
-                    minY = Mathf.Min(verts[q * 4].position.y, verts[q * 4 + 2].position.y);
+                    float x0 = float.MaxValue, x1 = float.MinValue, y0 = float.MaxValue;
+                    for (int j = 0; j < 6; j++)
+                    {
+                        var p = verts[q * 6 + j].position;
+                        x0 = Mathf.Min(x0, p.x); x1 = Mathf.Max(x1, p.x); y0 = Mathf.Min(y0, p.y);
+                    }
+                    cx = (x0 + x1) * 0.5f;
+                    minY = y0;
                     if (q > runStart && (Mathf.Abs(minY - runY) > size * 0.6f || cx < prevX - size * 0.25f)) split = true;
                 }
                 if (split && q > runStart) ApplyRun(runStart, q, spacing);
-                if (q == quads) break;
+                if (q == glyphs) break;
                 if (split || q == runStart) { runStart = q; runY = minY; }
                 prevX = cx;
             }
-            for (int i = 0; i < verts.Count; i++) vh.SetUIVertex(verts[i], i);
+            vh.Clear();
+            vh.AddUIVertexTriangleStream(verts);
         }
 
         void ApplyRun(int start, int end, float spacing)
@@ -72,9 +82,9 @@ namespace RustedFair
             for (int k = 0; k < n; k++)
             {
                 float dx = k * spacing - shift;
-                for (int j = 0; j < 4; j++)
+                for (int j = 0; j < 6; j++)
                 {
-                    int i = (start + k) * 4 + j;
+                    int i = (start + k) * 6 + j;
                     var vv = verts[i];
                     vv.position.x += dx;
                     verts[i] = vv;
