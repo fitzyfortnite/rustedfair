@@ -1,0 +1,110 @@
+# Rusted Fair - iOS build without a Mac: GitHub's macOS runner exports the Unity Xcode project, archives it with
+# automatic (cloud) signing through an App Store Connect API key and uploads it to App Store Connect / TestFlight.
+# Run it from GitHub: Actions > "iOS TestFlight" > Run workflow (or push a tag ios-*).
+#
+# Repository secrets (Settings > Secrets and variables > Actions), entered by the account owner:
+#   UNITY_EMAIL, UNITY_PASSWORD     Unity ID for the Personal licence (an account without 2-step verification)
+#   ASC_KEY_P8                      the whole AuthKey_XXXXXXXXXX.p8 file, pasted as-is (key with the Admin role: cloud signing)
+#   ASC_KEY_ID                      key id shown next to the key
+#   ASC_ISSUER_ID                   issuer id at the top of App Store Connect > Users and Access > Integrations
+name: iOS TestFlight
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['ios-*']
+
+jobs:
+  ios:
+    runs-on: macos-26
+    timeout-minutes: 150
+    env:
+      RF_BUILD_NUMBER: ${{ github.run_number }}
+      RF_TEAM_ID: S3SMBYR9FZ   # LYFE STUDIOS team id (not a secret)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-iOS-${{ hashFiles('Packages/packages-lock.json', 'ProjectSettings/ProjectVersion.txt') }}
+          restore-keys: Library-iOS-
+
+      - name: Select Xcode 26
+        run: |
+          XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$XC" ]; then sudo xcode-select -s "$XC"; fi
+          xcodebuild -version
+
+      - uses: buildalon/unity-setup@v2
+        with:
+          build-targets: iOS
+
+      - uses: buildalon/activate-unity-license@v2
+        with:
+          license: 'Personal'
+          username: ${{ secrets.UNITY_EMAIL }}
+          password: ${{ secrets.UNITY_PASSWORD }}
+
+      - uses: buildalon/unity-action@v3
+        name: Export Xcode project (Unity)
+        with:
+          build-target: iOS
+          log-name: iOS-Export
+          args: -quit -batchmode -nographics -buildTarget iOS -executeMethod RustedFair.EditorTools.RFReleaseBuild.BuildIOSCI
+
+      - name: Archive (automatic signing with the API key)
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -eo pipefail
+          KEY="$RUNNER_TEMP/AuthKey.p8"
+          # pasted as-is, or base64-encoded
+          if printf '%s' "$ASC_KEY_P8" | grep -q "BEGIN PRIVATE KEY"; then printf '%s\n' "$ASC_KEY_P8" > "$KEY"; else printf '%s' "$ASC_KEY_P8" | base64 --decode > "$KEY"; fi
+          cd Builds/iOS
+          if [ ! -d Unity-iPhone.xcworkspace ] && [ -f Podfile ]; then pod install; fi
+          if [ -d Unity-iPhone.xcworkspace ]; then TARGET=(-workspace Unity-iPhone.xcworkspace); else TARGET=(-project Unity-iPhone.xcodeproj); fi
+          xcodebuild "${TARGET[@]}" -scheme Unity-iPhone -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/RustedFair.xcarchive" archive \
+            -allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$RF_TEAM_ID" CODE_SIGN_STYLE=Automatic | tee "$RUNNER_TEMP/archive.log" | grep -E "error:|warning: .*sign|ARCHIVE (SUCCEEDED|FAILED)" || true
+          test -d "$RUNNER_TEMP/RustedFair.xcarchive"
+
+      - name: Export and upload to App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -eo pipefail
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$RF_TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/RustedFair.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/AuthKey.p8" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            | tee "$RUNNER_TEMP/export.log" | grep -E "error|Upload|EXPORT" || true
+          grep -q "EXPORT SUCCEEDED" "$RUNNER_TEMP/export.log"
+
+      - name: Clean up the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/AuthKey.p8"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-logs
+          path: |
+            ${{ runner.temp }}/*.log
+            ${{ github.workspace }}/**/*.log
+          if-no-files-found: ignore

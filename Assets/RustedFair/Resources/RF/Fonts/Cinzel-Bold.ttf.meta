@@ -1,0 +1,30 @@
+fileFormatVersion: 2
+guid: d2fd5c1234015ee47bf9d42ad1d236f9
+TrueTypeFontImporter:
+  externalObjects: {}
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontNames:
+  - Segoe UI Symbol
+  - Arial Unicode MS
+  - Apple Symbols
+  - Apple Color Emoji
+  - Noto Sans Symbols
+  - Noto Sans Symbols2
+  - Noto Sans CJK SC
+  - Roboto
+  - DejaVu Sans
+  - Arial
+  fallbackFontReferences: []
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  shouldRoundAdvanceValue: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

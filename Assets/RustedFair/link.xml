@@ -1,0 +1,20 @@
+<!--
+  Rusted Fair v1.0.0: managed code stripping is "Medium" for store builds. Keep the purchasing and ads SDKs
+  (reflection / native callbacks) and the game assembly (JsonUtility save data, UnitySendMessage receivers).
+-->
+<linker>
+  <assembly fullname="Assembly-CSharp" preserve="all"/>
+  <assembly fullname="UnityEngine.Purchasing" preserve="all" ignoreIfMissing="1"/>
+  <assembly fullname="UnityEngine.Purchasing.Stores" preserve="all" ignoreIfMissing="1"/>
+  <assembly fullname="UnityEngine.Purchasing.SecurityCore" preserve="all" ignoreIfMissing="1"/>
+  <assembly fullname="Unity.Services.Core" preserve="all" ignoreIfMissing="1"/>
+  <assembly fullname="Unity.Services.Core.Internal" preserve="all" ignoreIfMissing="1"/>
+  <assembly fullname="GoogleMobileAds" preserve="all" ignoreIfMissing="1"/>
+  <assembly fullname="GoogleMobileAds.Core" preserve="all" ignoreIfMissing="1"/>
+  <assembly fullname="GoogleMobileAds.Common" preserve="all" ignoreIfMissing="1"/>
+  <assembly fullname="GoogleMobileAds.Android" preserve="all" ignoreIfMissing="1"/>
+  <assembly fullname="GoogleMobileAds.iOS" preserve="all" ignoreIfMissing="1"/>
+  <assembly fullname="GoogleMobileAds.Ump" preserve="all" ignoreIfMissing="1"/>
+  <assembly fullname="GoogleMobileAds.Ump.Android" preserve="all" ignoreIfMissing="1"/>
+  <assembly fullname="GoogleMobileAds.Ump.iOS" preserve="all" ignoreIfMissing="1"/>
+</linker>

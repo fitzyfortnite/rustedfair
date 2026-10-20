@@ -1,0 +1,39 @@
+# Unity
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+*.csproj
+*.sln
+*.suo
+*.user
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.vs/
+.idea/
+.vscode/
+*.apk
+*.aab
+*.unitypackage
+crashlytics-build.properties
+# signing keys never go into the repository
+*.keystore
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+# large store / scratch files
+/StoreAssets/Upload/
+/StoreAssets/KeyArt/*_k.png
+/StoreAssets/KeyArt/*_w.png
+/StoreAssets/KeyArt/debug_*.png
