@@ -11,12 +11,18 @@ name: iOS TestFlight
 
 on:
   workflow_dispatch:
+    inputs:
+      runner:
+        description: 'macOS runner (try macos-15 when macos-26 has no free machines)'
+        type: choice
+        options: [macos-26, macos-15]
+        default: macos-26
   push:
     tags: ['ios-*']
 
 jobs:
   ios:
-    runs-on: macos-26
+    runs-on: ${{ inputs.runner || 'macos-26' }}
     timeout-minutes: 150
     env:
       RF_BUILD_NUMBER: ${{ github.run_number }}
@@ -35,6 +41,8 @@ jobs:
           XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
           if [ -n "$XC" ]; then sudo xcode-select -s "$XC"; fi
           xcodebuild -version
+          # App Store Connect only accepts builds made with Xcode 26 / the iOS 26 SDK
+          xcodebuild -version | grep -q "Xcode 26" || { echo "::error::Xcode 26 is not installed on this runner"; exit 1; }
 
       - uses: buildalon/unity-setup@v2
         with:
