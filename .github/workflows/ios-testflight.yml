@@ -3,7 +3,7 @@
 # Run it from GitHub: Actions > "iOS TestFlight" > Run workflow (or push a tag ios-*).
 #
 # Repository secrets (Settings > Secrets and variables > Actions), entered by the account owner:
-#   UNITY_EMAIL, UNITY_PASSWORD     Unity ID for the Personal licence (an account without 2-step verification)
+#   UNITY_EMAIL (or UNITY_MAIL), UNITY_PASSWORD     Unity ID for the Personal licence (an account without 2-step verification)
 #   ASC_KEY_P8                      the whole AuthKey_XXXXXXXXXX.p8 file, pasted as-is (key with the Admin role: cloud signing)
 #   ASC_KEY_ID                      key id shown next to the key
 #   ASC_ISSUER_ID                   issuer id at the top of App Store Connect > Users and Access > Integrations
@@ -43,7 +43,7 @@ jobs:
       - uses: buildalon/activate-unity-license@v2
         with:
           license: 'Personal'
-          username: ${{ secrets.UNITY_EMAIL }}
+          username: ${{ secrets.UNITY_EMAIL || secrets.UNITY_MAIL }}
           password: ${{ secrets.UNITY_PASSWORD }}
 
       - uses: buildalon/unity-action@v3
