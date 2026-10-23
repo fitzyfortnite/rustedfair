@@ -111,7 +111,7 @@ jobs:
           for f in files:
               with open(f, 'rb') as fh:
                   d = plistlib.load(fh)
-              print(f.split('.xcarchive/')[-1], 'tracking=', repr(d.get('NSPrivacyTracking')), 'domains=', d.get('NSPrivacyTrackingDomains'))
+              print('::notice title=Privacy manifest::' + f.split('.xcarchive/')[-1] + ' tracking=' + repr(d.get('NSPrivacyTracking')) + ' domains=' + repr(d.get('NSPrivacyTrackingDomains')))
               if 'NSPrivacyTrackingDomains' in d and d.get('NSPrivacyTracking') is not True:
                   d['NSPrivacyTracking'] = True
                   with open(f, 'wb') as fh:
