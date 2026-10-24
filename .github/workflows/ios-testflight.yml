@@ -61,9 +61,9 @@ jobs:
           log-name: iOS-Export
           args: -quit -batchmode -nographics -buildTarget iOS -executeMethod RustedFair.EditorTools.RFReleaseBuild.BuildIOSCI
 
-      # Unity merges the plugin privacy manifests into UnityFramework's PrivacyInfo.xcprivacy but keeps
-      # NSPrivacyTracking false even when tracking domains are listed, which App Store Connect rejects
-      # (ITMS-91064). The game does track for ads (AdMob, after the ATT prompt), so mark those manifests true.
+      # Unity merges the plugin privacy manifests into UnityFramework's PrivacyInfo.xcprivacy. App Store Connect
+      # rejects an inconsistent tracking setting (ITMS-91064). Apple's rule: NSPrivacyTracking true needs at least one tracking domain, and listed domains
+      # need NSPrivacyTracking true. Make every manifest consistent with its domain list.
       - name: Fix privacy manifests (ITMS-91064)
         run: |
           python3 - <<'PY'
@@ -71,11 +71,15 @@ jobs:
           for f in glob.glob('Builds/iOS/**/PrivacyInfo.xcprivacy', recursive=True):
               with open(f, 'rb') as fh:
                   d = plistlib.load(fh)
-              if 'NSPrivacyTrackingDomains' in d and d.get('NSPrivacyTracking') is not True:
-                  d['NSPrivacyTracking'] = True
+              doms = d.get('NSPrivacyTrackingDomains') or []
+              want = bool(doms)
+              if d.get('NSPrivacyTracking', False) != want or ('NSPrivacyTrackingDomains' in d and not doms):
+                  d['NSPrivacyTracking'] = want
+                  if not doms:
+                      d.pop('NSPrivacyTrackingDomains', None)
                   with open(f, 'wb') as fh:
                       plistlib.dump(d, fh)
-                  print('fixed', f, d['NSPrivacyTrackingDomains'])
+                  print('fixed', f, 'tracking=', want, doms)
               else:
                   print('ok', f, d.get('NSPrivacyTracking'), len(d.get('NSPrivacyTrackingDomains') or []))
           PY
@@ -112,12 +116,16 @@ jobs:
               with open(f, 'rb') as fh:
                   d = plistlib.load(fh)
               print('::notice title=Privacy manifest::' + f.split('.xcarchive/')[-1] + ' tracking=' + repr(d.get('NSPrivacyTracking')) + ' domains=' + repr(d.get('NSPrivacyTrackingDomains')))
-              if 'NSPrivacyTrackingDomains' in d and d.get('NSPrivacyTracking') is not True:
-                  d['NSPrivacyTracking'] = True
+              doms = d.get('NSPrivacyTrackingDomains') or []
+              want = bool(doms)
+              if ('NSPrivacyTracking' in d or doms) and (d.get('NSPrivacyTracking', False) != want or ('NSPrivacyTrackingDomains' in d and not doms)):
+                  d['NSPrivacyTracking'] = want
+                  if not doms:
+                      d.pop('NSPrivacyTrackingDomains', None)
                   with open(f, 'wb') as fh:
                       plistlib.dump(d, fh)
                   bad += 1
-                  print('fixed in archive', f)
+                  print('::notice title=Privacy manifest fixed::' + f.split('.xcarchive/')[-1] + ' tracking=' + str(want))
           print('privacy manifests checked, fixed', bad)
           if not files:
               sys.exit('no privacy manifests found in the archive')

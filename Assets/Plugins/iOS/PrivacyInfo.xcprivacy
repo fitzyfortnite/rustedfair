@@ -4,15 +4,15 @@
   Rusted Fair (LYFE STUDIOS) - app-level privacy manifest (v1.0.0).
   Unity's own manifest covers the engine; the Google Mobile Ads / UMP SDKs ship their own manifests.
   Tracking: ads may use the advertising identifier for personalised ads only after the player allows it in the
-  App Tracking Transparency prompt (otherwise non-personalised ads are requested).
+  App Tracking Transparency prompt (otherwise non-personalised ads are requested). NSPrivacyTracking stays false:
+  Apple requires a non-empty NSPrivacyTrackingDomains when it is true (ITMS-91064), and listed domains are blocked
+  for players who decline ATT, which would stop non-personalised ads too. Tracking is declared in App Privacy.
   Purchases go through StoreKit; LYFE STUDIOS does not collect or store purchase data itself.
 -->
 <plist version="1.0">
 <dict>
 	<key>NSPrivacyTracking</key>
-	<true/>
-	<key>NSPrivacyTrackingDomains</key>
-	<array/>
+	<false/>
 	<key>NSPrivacyCollectedDataTypes</key>
 	<array>
 		<dict>
